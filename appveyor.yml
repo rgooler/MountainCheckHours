@@ -1,0 +1,79 @@
+version: 0.0.{build}
+shallow_clone: true
+clone_depth: 1
+
+environment:
+    pack_dlls: 1
+    matrix:
+        - PYTHON: "C:\\Python37"
+          ARCH: "32"
+        - PYTHON: "C:\\Python37"
+          ARCH: "64"
+
+install:
+    - "%PYTHON%\\python.exe --version"
+    - "%PYTHON%\\Scripts\\pip install --no-warn-script-location pyinstaller"
+    - ps: Set-Content "MountainCheckHours\\version.py" ( "__version__ = '{0}'" -f ( $env:APPVEYOR_BUILD_VERSION ) )
+    - "%PYTHON%\\Scripts\\pip install --no-warn-script-location -r requirements.txt"
+
+build:
+  verbosity: normal
+
+build_script:
+    - "%PYTHON%\\Scripts\\pyinstaller --onefile --icon icon.ico MountainCheckHours.py"
+
+after_build:
+  - ps: 7z a MountainCheckHours-$env:APPVEYOR_BUILD_VERSION-windows-$env:ARCH.zip .\dist\* LICENSE
+
+artifacts:
+    - path: "MountainCheckHours-*-windows-32.zip"
+    - path: "MountainCheckHours-*-windows-64.zip"
+
+deploy:
+  ################################################################################
+  # Release untagged versaions as drafts
+  - provider: GitHub
+    release: draft-v$(appveyor_build_version)
+    auth_token:
+      secure: 208TDvAq+KHsvan3IIpa1CyuzFxO7cw/0zMjSxogqBGbnkNUxQU6g6YUiekFAWRC
+    artifact: "MountainCheckHours-$(appveyor_build_version)-windows-32.zip"
+    draft: true
+    prerelease: false
+    on:
+      branch: master                 # release from master branch only
+      APPVEYOR_REPO_TAG: false
+
+  - provider: GitHub
+    release: draft-v$(appveyor_build_version)
+    auth_token:
+      secure: 208TDvAq+KHsvan3IIpa1CyuzFxO7cw/0zMjSxogqBGbnkNUxQU6g6YUiekFAWRC
+    artifact: "MountainCheckHours-$(appveyor_build_version)-windows-64.zip"
+    draft: true
+    prerelease: false
+    on:
+      branch: master                 # release from master branch only
+      APPVEYOR_REPO_TAG: false
+
+  ################################################################################
+  # Release tagged versaions as pre-release
+  - provider: GitHub
+    release: v$(appveyor_build_version)
+    auth_token:
+      secure: 208TDvAq+KHsvan3IIpa1CyuzFxO7cw/0zMjSxogqBGbnkNUxQU6g6YUiekFAWRC
+    artifact: "MountainCheckHours-$(appveyor_build_version)-windows-32.zip"
+    draft: false
+    prerelease: true
+    on:
+      branch: master                 # release from master branch only
+      APPVEYOR_REPO_TAG: true
+
+  - provider: GitHub
+    release: v$(appveyor_build_version)
+    auth_token:
+      secure: 208TDvAq+KHsvan3IIpa1CyuzFxO7cw/0zMjSxogqBGbnkNUxQU6g6YUiekFAWRC
+    artifact: "MountainCheckHours-$(appveyor_build_version)-windows-64.zip"
+    draft: false
+    prerelease: true
+    on:
+      branch: master                 # release from master branch only
+      APPVEYOR_REPO_TAG: true
